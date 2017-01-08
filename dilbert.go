@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -14,7 +13,7 @@ func getDilbertImage(date string, path string) (filename string, myerr error) {
 	if res, err := http.Get(path); err == nil {
 		if image, err := ioutil.ReadAll(res.Body); err == nil {
 			defer res.Body.Close()
-			filename = "./" + date + ".gif"
+			filename = "./images/" + date + ".gif"
 			if err := ioutil.WriteFile(filename, image, 0644); err != nil {
 				myerr = err
 			}
@@ -38,13 +37,13 @@ func getDilbertImagePath(date string) (path string, myerr error) {
 				if imgRegExMatches := imgRegEx.FindAllSubmatch(body, 1); len(imgRegExMatches) == 1 {
 					path = "http://assets.amuniversal.com/" + string(imgRegExMatches[0][1])
 				} else {
-					myerr = errors.New("Failed to find image path for " + date)
+					myerr = fmt.Errorf("Failed to find image path for %s", date)
 				}
 			} else {
 				myerr = err
 			}
 		} else {
-			myerr = errors.New("image for " + date + " " + res.Status)
+			myerr = fmt.Errorf("image for %s %s", date, res.Status)
 		}
 	} else {
 		myerr = err
@@ -54,6 +53,11 @@ func getDilbertImagePath(date string) (path string, myerr error) {
 
 func main() {
 	//date := "2016-10-12"
+	/* ##TODO##
+	if os.Args[1] is valid date {
+	  thedate := os.Args[1]
+	}
+	*/
 	date := time.Now().Format("2006-01-02")
 	if path, err := getDilbertImagePath(date); err == nil {
 		fmt.Println(path, "found")
