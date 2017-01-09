@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-var errTooManyArgs = errors.New("One argument required - the date in format yyyy-mm-dd")
+var errNumOfArgs = errors.New("One argument required - the date in format yyyy-mm-dd")
 var errInvalidDate = errors.New("Invalid date provided")
 
 func main() {
@@ -39,7 +39,7 @@ func main() {
 func validateDate(args []string) (stripDate string, err error) {
 	// Check to see we got one arg, no more no less
 	if len(args[1:]) != 1 {
-		return "", errTooManyArgs
+		return "", errNumOfArgs
 	}
 
 	// Attempt to parse os.Args[1] with our date format to ensure it will work
@@ -71,5 +71,10 @@ func getStripPage(stripDate string) (stripPage []byte, err error) {
 
 	stripPage, err = ioutil.ReadAll(res.Body)
 	res.Body.Close()
+	return
+}
+
+func getStripImageAddr(stripPage []byte) (stripImageAddr string, err error) {
+
 	return
 }
