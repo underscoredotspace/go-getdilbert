@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"errors"
+	"testing"
+)
 
 func Test_validateDate(t *testing.T) {
 	type testArgs []string
@@ -37,7 +40,25 @@ func Test_getStripPage(t *testing.T) {
 	for _, tt := range getStripTests {
 		_, err := getStripPage(tt.test)
 		if err.Error() != tt.err {
-			t.Errorf("Expected %q; got %q", tt.err, err.Error())
+			t.Errorf("Expected %q; got %v", tt.err, err)
+		}
+	}
+}
+
+func Test_getStripImageAddr(t *testing.T) {
+	var getStripImageAddrTests = []struct {
+		test           string
+		stripImageAddr string
+		err            error
+	}{
+		{`data-url="http://dilbert.com/strip/2017-01-10" data-image="http://assets.amuniversal.com/ecf9a570ae6b01341f1d005056a9545d" data-date="January 10, 2017" `, "http://assets.amuniversal.com/ecf9a570ae6b01341f1d005056a9545d", nil},
+		{`some other text`, "", errors.New("404 - Page Not Found")},
+	}
+
+	for _, tt := range getStripImageAddrTests {
+		stripImageAddr, err := getStripImageAddr([]byte(tt.test))
+		if stripImageAddr != tt.stripImageAddr && err != tt.err {
+			t.Errorf("Expected %q, %v; got %q %v", tt.stripImageAddr, tt.err, stripImageAddr, err)
 		}
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"regexp"
 	"time"
 )
 
@@ -29,7 +30,7 @@ func main() {
 /*
 	* Check supplied date
 	* Load page relevant to date
-	Find strip image with regex
+	* Find strip image with regex
 	Load image
 	Save image
 */
@@ -44,7 +45,6 @@ func validateDate(args []string) (stripDate string, err error) {
 
 	// Attempt to parse os.Args[1] with our date format to ensure it will work
 	if _, parseErr := time.Parse("2006-01-02", args[1]); parseErr != nil {
-		log.Println(parseErr.Error())
 		return "", errInvalidDate
 	}
 
@@ -52,7 +52,7 @@ func validateDate(args []string) (stripDate string, err error) {
 }
 
 func getStripPage(stripDate string) (stripPage []byte, err error) {
-	// This prevents http.get from following redirects. In our case there is no 404 merely redirect to homepage.
+	// This prevents http.get from following redirects, as with dilbert.com/strip/* there is no 404 merely redirect to homepage.
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
@@ -65,8 +65,7 @@ func getStripPage(stripDate string) (stripPage []byte, err error) {
 	}
 
 	if res.StatusCode < 200 || res.StatusCode > 299 {
-		log.Println(res.Header.Get("location") + " - " + res.Status)
-		return nil, errors.New("Error loading page " + stripPageAddr)
+		return nil, errors.New("404 - Page Not Found")
 	}
 
 	stripPage, err = ioutil.ReadAll(res.Body)
@@ -75,6 +74,11 @@ func getStripPage(stripDate string) (stripPage []byte, err error) {
 }
 
 func getStripImageAddr(stripPage []byte) (stripImageAddr string, err error) {
-
+	var imgRegEx = regexp.MustCompile(`data-image="http:\/\/assets\.amuniversal.com\/([a-z0-9]+)"`)
+	if imgRegExMatches := imgRegEx.FindAllSubmatch(stripPage, 1); len(imgRegExMatches) == 1 {
+		stripImageAddr = "http://assets.amuniversal.com/" + string(imgRegExMatches[0][1])
+	} else {
+		err = errors.New("Failed to find image path")
+	}
 	return
 }
