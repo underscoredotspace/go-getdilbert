@@ -12,6 +12,8 @@ import (
 
 var errNumOfArgs = errors.New("One argument required - the date in format yyyy-mm-dd")
 var errInvalidDate = errors.New("Invalid date provided")
+var errFailedToFindImageAddr = errors.New("Failed to find image path")
+var err404 = errors.New("404 - Page Not Found")
 
 func main() {
 	stripDate, err := validateDate(os.Args)
@@ -19,19 +21,34 @@ func main() {
 		log.Fatalln(err.Error())
 	}
 
-	stripPageData, err := getStripPage(stripDate)
+	stripPage, err := getStripPage(stripDate)
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
 
-	log.Println(stripPageData)
+	stripImageAddr, err := getStripImageAddr(stripPage)
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+
+	stripImage, err := getStripImage(stripImageAddr)
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+
+	err = saveStripImage(stripImage, stripDate)
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+
+	log.Println("Saved")
 }
 
 /*
 	* Check supplied date
 	* Load page relevant to date
-	* Find strip image with regex
-	Load image
+	* Find strip image addrss with regex
+	* Load image
 	Save image
 */
 
@@ -64,8 +81,8 @@ func getStripPage(stripDate string) (stripPage []byte, err error) {
 		return
 	}
 
-	if res.StatusCode < 200 || res.StatusCode > 299 {
-		return nil, errors.New("404 - Page Not Found")
+	if res.StatusCode != 200 {
+		return nil, err404
 	}
 
 	stripPage, err = ioutil.ReadAll(res.Body)
@@ -78,7 +95,27 @@ func getStripImageAddr(stripPage []byte) (stripImageAddr string, err error) {
 	if imgRegExMatches := imgRegEx.FindAllSubmatch(stripPage, 1); len(imgRegExMatches) == 1 {
 		stripImageAddr = "http://assets.amuniversal.com/" + string(imgRegExMatches[0][1])
 	} else {
-		err = errors.New("Failed to find image path")
+		err = errFailedToFindImageAddr
 	}
+	return
+}
+
+func getStripImage(stripImageAddr string) (stripImage []byte, err error) {
+	res, err := http.Get(stripImageAddr)
+	if err != nil {
+		return
+	}
+
+	if res.StatusCode != 200 {
+		return nil, err404
+	}
+
+	stripImage, err = ioutil.ReadAll(res.Body)
+	res.Body.Close()
+	return
+}
+
+func saveStripImage(stripImage []byte, stripDate string) (err error) {
+
 	return
 }

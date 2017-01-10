@@ -1,7 +1,8 @@
 package main
 
 import (
-	"errors"
+	"crypto/md5"
+	"encoding/hex"
 	"testing"
 )
 
@@ -31,15 +32,15 @@ func Test_validateDate(t *testing.T) {
 func Test_getStripPage(t *testing.T) {
 	var getStripTests = []struct {
 		test string
-		err  string
+		err  error
 	}{
-		{"kcuc", "Error loading page http://dilbert.com/strip/kcuc"},
-		{"1983-02-28", "Error loading page http://dilbert.com/strip/1983-02-28"},
+		{"kcuc", err404},
+		{"1983-02-28", err404},
 	}
 
 	for _, tt := range getStripTests {
 		_, err := getStripPage(tt.test)
-		if err.Error() != tt.err {
+		if err != tt.err {
 			t.Errorf("Expected %q; got %v", tt.err, err)
 		}
 	}
@@ -52,13 +53,32 @@ func Test_getStripImageAddr(t *testing.T) {
 		err            error
 	}{
 		{`data-url="http://dilbert.com/strip/2017-01-10" data-image="http://assets.amuniversal.com/ecf9a570ae6b01341f1d005056a9545d" data-date="January 10, 2017" `, "http://assets.amuniversal.com/ecf9a570ae6b01341f1d005056a9545d", nil},
-		{`some other text`, "", errors.New("404 - Page Not Found")},
+		{`some other text`, "", errFailedToFindImageAddr},
 	}
 
 	for _, tt := range getStripImageAddrTests {
 		stripImageAddr, err := getStripImageAddr([]byte(tt.test))
 		if stripImageAddr != tt.stripImageAddr && err != tt.err {
 			t.Errorf("Expected %q, %v; got %q %v", tt.stripImageAddr, tt.err, stripImageAddr, err)
+		}
+	}
+}
+
+func Test_getStripImage(t *testing.T) {
+	var getStripImageTests = []struct {
+		test     string
+		checksum string
+		err      error
+	}{
+		{"http://assets.amuniversal.com/ecf9a570ae6b01341f1d005056a9545d", "2d9cc2fdd9dbc7b5f864ccf59c278aae", nil},
+		{"http://google.com/ecf9a570ae6b01341f1d005056a9545", "d41d8cd98f00b204e9800998ecf8427e", err404},
+	}
+	for _, tt := range getStripImageTests {
+		stripImage, err := getStripImage(tt.test)
+		sum := md5.Sum(stripImage)
+		base16 := hex.EncodeToString(sum[:])
+		if err != tt.err || base16 != tt.checksum {
+			t.Errorf("Expected %v, %v; got %v, %v", tt.checksum, tt.err, base16, err)
 		}
 	}
 }
