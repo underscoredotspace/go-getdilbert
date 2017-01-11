@@ -3,6 +3,9 @@ package main
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"errors"
+	"io/ioutil"
+	"os"
 	"testing"
 )
 
@@ -79,6 +82,33 @@ func Test_getStripImage(t *testing.T) {
 		base16 := hex.EncodeToString(sum[:])
 		if err != tt.err || base16 != tt.checksum {
 			t.Errorf("Expected %v, %v; got %v, %v", tt.checksum, tt.err, base16, err)
+		}
+	}
+}
+
+func Test_saveStripImage(t *testing.T) {
+	testDir, err := ioutil.TempDir("", "test")
+	if err != nil {
+		t.Error(err)
+	}
+	defer os.RemoveAll(testDir)
+
+	var saveStripImageTests = []struct {
+		stripImage []byte
+		stripDate  string
+		err        error
+	}{
+		{[]byte("test content"), "2016-01-11", nil},
+		{[]byte("test content"), "2016-01-11", os.ErrExist},
+		{[]byte("test content"), "2016-01-32", errors.New("parsing time \"2016-01-32\": day out of range")},
+	}
+	for _, tt := range saveStripImageTests {
+		err := saveStripImage(testDir, tt.stripImage, tt.stripDate)
+		if err == nil && tt.err != err {
+			t.Errorf("Expected '%v'; got '%v'", tt.err, err)
+		}
+		if err != nil && tt.err.Error() != err.Error() {
+			t.Errorf("Expected '%v'; got '%v'", tt.err.Error(), err.Error())
 		}
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"regexp"
 	"time"
 )
@@ -36,21 +37,13 @@ func main() {
 		log.Fatalln(err.Error())
 	}
 
-	err = saveStripImage(stripImage, stripDate)
+	err = saveStripImage("./images/", stripImage, stripDate)
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
 
 	log.Println("Saved")
 }
-
-/*
-	* Check supplied date
-	* Load page relevant to date
-	* Find strip image addrss with regex
-	* Load image
-	Save image
-*/
 
 // validateDate takes os.Args as a slice and checks date in the valid format has been provided
 //   no other args required, so returns error for too many args
@@ -115,7 +108,32 @@ func getStripImage(stripImageAddr string) (stripImage []byte, err error) {
 	return
 }
 
-func saveStripImage(stripImage []byte, stripDate string) (err error) {
+func saveStripImage(stripsPath string, stripImage []byte, stripDate string) error {
+	// Parse date in to time.Time variable to allow us to pull elements for folder/filename
+	stripDateParsed, err := time.Parse("2006-01-02", stripDate)
+	if err != nil {
+		return err
+	}
 
-	return
+	// Build the path, adding any missing slashes
+	savePath := filepath.Join(stripsPath, stripDateParsed.Format("2006/01/02")+".gif")
+
+	// Check to see if file already exists
+	_, err = os.Stat(savePath)
+	if err == nil {
+		// No point going further if it does
+		return os.ErrExist
+	}
+
+	// Extract directory from savePath
+	saveDir, _ := filepath.Split(savePath)
+
+	// Make saveDir including required parents
+	err = os.MkdirAll(saveDir, 0744)
+	if err != nil {
+		return err
+	}
+
+	// Save the strip itself
+	return ioutil.WriteFile(savePath, stripImage, 0644)
 }
