@@ -17,7 +17,6 @@ func Test_validateDate(t *testing.T) {
 		stripDate string
 		err       error
 	}{
-		{testArgs{""}, "", errNumOfArgs},
 		{testArgs{"", "1"}, "", errInvalidDate},
 		{testArgs{"", "2016-99-30"}, "", errInvalidDate},
 		{testArgs{"", "1983-02-29"}, "", errInvalidDate},

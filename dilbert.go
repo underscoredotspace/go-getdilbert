@@ -11,8 +11,7 @@ import (
 	"time"
 )
 
-var errNumOfArgs = errors.New("One argument required - the date in format yyyy-mm-dd")
-var errInvalidDate = errors.New("Invalid date provided")
+var errInvalidDate = errors.New("Usage - " + os.Args[0] + " [yyyy-mm-dd]")
 var errFailedToFindImageAddr = errors.New("Failed to find image path")
 var err404 = errors.New("404 - Page Not Found")
 
@@ -48,9 +47,9 @@ func main() {
 // validateDate takes os.Args as a slice and checks date in the valid format has been provided
 //   no other args required, so returns error for too many args
 func validateDate(args []string) (stripDate string, err error) {
-	// Check to see we got one arg, no more no less
-	if len(args[1:]) != 1 {
-		return "", errNumOfArgs
+	// If we didn't get any arguments, assume stripDate is today
+	if len(args[1:]) == 0 {
+		return time.Now().Format("2006-01-02"), nil
 	}
 
 	// Attempt to parse os.Args[1] with our date format to ensure it will work
