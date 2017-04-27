@@ -1,5 +1,5 @@
 # Go Get Dilbert
-Downloads Dilbert strip for today's or specified date and saves it as`./images/[yyyy]/[mm]/[dd].gif`
+Downloads Dilbert strip for today's or specified date and saves it as`./images/[yyyy]/[mm]/[dd].gif` (currently only in working directory)
 
 ### Usage
 | Command | Result |
@@ -8,9 +8,9 @@ Downloads Dilbert strip for today's or specified date and saves it as`./images/[
 | ./go-getdilbert | downloads today's strip |
 
 ### Build
+Go version 1.7 or later is required, but there are no external dependencies. 
 ````
-# go test
-# go build
+# go build 
 ````
 
 ### Installation
